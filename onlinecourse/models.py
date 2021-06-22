@@ -1,4 +1,5 @@
 import sys
+from django.db.models.deletion import CASCADE
 from django.utils.timezone import now
 try:
     from django.db import models
@@ -49,7 +50,7 @@ class Learner(models.Model):
 
     def __str__(self):
         return self.user.username + "," + \
-               self.occupation
+            self.occupation
 
 
 # Course model
@@ -59,7 +60,8 @@ class Course(models.Model):
     description = models.CharField(max_length=1000)
     pub_date = models.DateField(null=True)
     instructors = models.ManyToManyField(Instructor)
-    users = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Enrollment')
+    users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, through='Enrollment')
     total_enrollment = models.IntegerField(default=0)
     is_enrolled = False
 
@@ -88,7 +90,8 @@ class Enrollment(models.Model):
         (HONOR, 'Honor'),
         (BETA, 'BETA')
     ]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     date_enrolled = models.DateField(default=now)
     mode = models.CharField(max_length=5, choices=COURSE_MODES, default=AUDIT)
@@ -103,15 +106,17 @@ class Enrollment(models.Model):
     # Other fields and methods you would like to design
 class Question(models.Model):
     # Foreign key to lesson
-    lesson = models.ForeignKey(Lesson, on_delete = models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     # question text
     q_text = models.TextField()
     # question grade/mark
     q_grade = models.IntegerField()
     # <HINT> A sample model method to calculate if learner get the score of the question
+
     def is_get_score(self, selected_ids):
         all_answers = self.choice_set.filter(is_correct=True).count()
-        selected_correct = self.choice_set.filter(is_correct=True, id__in=selected_ids).count()
+        selected_correct = self.choice_set.filter(
+            is_correct=True, id__in=selected_ids).count()
         if all_answers == selected_correct:
             return True
         else:
@@ -125,7 +130,7 @@ class Question(models.Model):
     # Indicate if this choice of the question is a correct one or not
     # Other fields and methods you would like to design
 class Choice(models.Model):
-    question = models.ManyToManyField(Question)
+    question = models.ForeignKey(Question, on_delete=CASCADE, null=True)
     content = models.TextField()
     correct = models.BooleanField()
 
@@ -133,7 +138,9 @@ class Choice(models.Model):
 # One enrollment could have multiple submission
 # One submission could have multiple choices
 # One choice could belong to multiple submissions
+
+
 class Submission(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
-    chocies = models.ManyToManyField(Choice)
+    choices = models.ManyToManyField(Choice)
 #    Other fields and methods you would like to design
